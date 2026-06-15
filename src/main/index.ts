@@ -5,6 +5,13 @@ import fs from 'node:fs/promises';
 import { checkAwsAuth } from './services/aws-auth.service';
 import { checkAwsCli } from './services/aws-cli.service';
 import { discoverDependencies } from './discovery/discovery-engine';
+import {
+  checkForUpdates,
+  downloadUpdate,
+  getUpdateStatus,
+  initializeUpdater,
+  installUpdate
+} from './services/update.service';
 import type { DiscoveryRequest, RecentScan } from '../shared/types';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -39,6 +46,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   registerIpcHandlers();
+  initializeUpdater(() => mainWindow);
   createWindow();
 
   app.on('activate', () => {
@@ -59,6 +67,10 @@ function registerIpcHandlers(): void {
   ipcMain.handle('recent:add', (_event, scan: RecentScan) => addRecentScan(scan));
   ipcMain.handle('export:json', async (_event, payload: unknown) => exportJson(payload));
   ipcMain.handle('export:png', async (_event, dataUrl: string) => exportPng(dataUrl));
+  ipcMain.handle('updater:status', () => getUpdateStatus());
+  ipcMain.handle('updater:check', () => checkForUpdates());
+  ipcMain.handle('updater:download', () => downloadUpdate());
+  ipcMain.handle('updater:install', () => installUpdate());
 }
 
 async function exportJson(payload: unknown): Promise<{ saved: boolean; filePath?: string }> {

@@ -49,3 +49,27 @@ export interface RecentScan {
   label: string;
   scannedAt: string;
 }
+
+export type UpdateStatusType =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'not-available'
+  | 'downloading'
+  | 'downloaded'
+  | 'error'
+  | 'skipped';
+
+export interface AppUpdateStatus {
+  status: UpdateStatusType;
+  message: string;
+  currentVersion: string;
+  availableVersion?: string;
+  percent?: number;
+}
+
+export interface AppUpdateCheckResult {
+  updateAvailable: boolean;
+  version?: string;
+  message: string;
+}

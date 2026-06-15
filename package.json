@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@electron-toolkit/preload": "3.0.2",
+    "electron-updater": "6.6.2",
     "html-to-image": "1.11.13",
     "lucide-react": "0.468.0",
     "react": "18.3.1",
@@ -51,9 +52,17 @@
       "output": "release"
     },
     "files": [
-      "dist/**/*",
-      "package.json"
+      "out/**/*",
+      "assets/**/*",
+      "package.json",
+      "README.md",
+      "plan.md"
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "BramDat",
+      "repo": "aws-resource-dependency-mapper"
+    },
     "extraResources": [
       {
         "from": "assets",
