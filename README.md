@@ -48,6 +48,8 @@ npm run dist:win
 
 Installer output will be created under `release/`.
 
+[Download latest Windows installer](https://github.com/BramDat/aws-resource-dependency-mapper/releases/latest)
+
 ## Current MVP features
 
 - AWS CLI installation check
