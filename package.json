@@ -2,7 +2,7 @@
   "name": "aws-resource-dependency-mapper",
   "version": "0.1.0",
   "description": "Desktop app to discover and visualize AWS resource dependencies from any ARN.",
-  "main": "dist/main/index.js",
+  "main": "out/main/index.js",
   "author": "",
   "license": "MIT",
   "private": true,

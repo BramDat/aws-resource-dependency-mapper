@@ -110,7 +110,7 @@ export function App(): JSX.Element {
           <StatusPill
             label="AWS CLI"
             status={isChecking ? 'checking' : cliStatus?.installed ? 'success' : 'danger'}
-            detail={cliStatus?.installed ? cliStatus.version : 'Not installed'}
+            detail={cliStatus?.installed ? cliStatus.version ?? 'Installed' : 'Not installed'}
           />
           <StatusPill
             label="AWS Login"

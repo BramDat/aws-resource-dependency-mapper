@@ -1,6 +1,7 @@
 # AWS Resource Dependency Mapper
 
 Desktop app for discovering and visualizing AWS resource dependencies from an ARN.
+Start with any AWS ARN. Discover connected AWS resources, visualize dependencies as a tree, and export the result as JSON or image.
 
 ## Tech stack
 
