@@ -1,7 +1,11 @@
 import { app, BrowserWindow } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import { createRequire } from 'node:module';
 import type { ProgressInfo, UpdateInfo } from 'electron-updater';
+import { logError, logInfo } from './logger.service';
 import type { AppUpdateCheckResult, AppUpdateStatus } from '../../shared/types';
+
+const require = createRequire(import.meta.url);
+const { autoUpdater } = require('electron-updater') as typeof import('electron-updater');
 
 type StatusListener = (status: AppUpdateStatus) => void;
 
@@ -17,8 +21,14 @@ export function initializeUpdater(mainWindowProvider: () => BrowserWindow | null
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
+  logInfo('Updater initialized', {
+    currentVersion: app.getVersion(),
+    isPackaged: app.isPackaged
+  });
+
   const publishStatus: StatusListener = (status) => {
     latestStatus = status;
+    logInfo(`Updater status changed: ${status.status}`, status);
     mainWindowProvider()?.webContents.send('updater:status', latestStatus);
   };
 
@@ -70,6 +80,7 @@ export function initializeUpdater(mainWindowProvider: () => BrowserWindow | null
   });
 
   autoUpdater.on('error', (error: Error) => {
+    logError('Updater error', error);
     publishStatus({
       status: 'error',
       message: error.message || 'Update check failed.',
@@ -89,12 +100,14 @@ export async function checkForUpdates(): Promise<AppUpdateCheckResult> {
       message: 'Update checks are only available in the installed Windows app.',
       currentVersion: app.getVersion()
     };
+    logInfo('Skipped update check because the app is running in development mode.');
     return {
       updateAvailable: false,
       message: latestStatus.message
     };
   }
 
+  logInfo('Checking for updates from configured publisher.');
   const result = await autoUpdater.checkForUpdates();
   const info = result?.updateInfo;
   return {
@@ -107,11 +120,21 @@ export async function checkForUpdates(): Promise<AppUpdateCheckResult> {
 }
 
 export async function downloadUpdate(): Promise<void> {
-  if (!app.isPackaged) return;
+  if (!app.isPackaged) {
+    logInfo('Skipped update download because the app is running in development mode.');
+    return;
+  }
+
+  logInfo('Downloading update.');
   await autoUpdater.downloadUpdate();
 }
 
 export function installUpdate(): void {
-  if (!app.isPackaged) return;
+  if (!app.isPackaged) {
+    logInfo('Skipped update install because the app is running in development mode.');
+    return;
+  }
+
+  logInfo('Restarting app to install downloaded update.');
   autoUpdater.quitAndInstall();
 }

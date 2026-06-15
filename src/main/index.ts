@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import nodeFs from 'node:fs';
 import fs from 'node:fs/promises';
 import { checkAwsAuth } from './services/aws-auth.service';
 import { checkAwsCli } from './services/aws-cli.service';
@@ -12,6 +13,7 @@ import {
   initializeUpdater,
   installUpdate
 } from './services/update.service';
+import { logError, logInfo } from './services/logger.service';
 import type { DiscoveryRequest, RecentScan } from '../shared/types';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -19,7 +21,18 @@ const isDev = !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
 
+process.on('uncaughtException', (error) => {
+  logError('Uncaught exception in main process', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logError('Unhandled rejection in main process', reason);
+});
+
 function createWindow(): void {
+  const preloadPath = getPreloadPath();
+  logInfo('Creating main window', { preloadPath, isDev });
+
   mainWindow = new BrowserWindow({
     width: 1240,
     height: 820,
@@ -28,11 +41,19 @@ function createWindow(): void {
     title: 'AWS Resource Dependency Mapper',
     show: false,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false
     }
+  });
+
+  mainWindow.webContents.on('preload-error', (_event, preloadPath, error) => {
+    logError(`Preload script failed: ${preloadPath}`, error);
+  });
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    logError('Renderer failed to load', { errorCode, errorDescription, validatedURL });
   });
 
   mainWindow.on('ready-to-show', () => mainWindow?.show());
@@ -45,6 +66,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  logInfo('Application starting', { version: app.getVersion(), isPackaged: app.isPackaged });
   registerIpcHandlers();
   initializeUpdater(() => mainWindow);
   createWindow();
@@ -58,7 +80,15 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
+function getPreloadPath(): string {
+  const mjsPreloadPath = path.join(__dirname, '../preload/index.mjs');
+  const jsPreloadPath = path.join(__dirname, '../preload/index.js');
+
+  return nodeFs.existsSync(mjsPreloadPath) ? mjsPreloadPath : jsPreloadPath;
+}
+
 function registerIpcHandlers(): void {
+  logInfo('Registering IPC handlers');
   ipcMain.handle('aws:check-cli', () => checkAwsCli());
   ipcMain.handle('aws:check-auth', () => checkAwsAuth());
   ipcMain.handle('discovery:run', async (_event, request: DiscoveryRequest) => discoverDependencies(request));
