@@ -34,9 +34,14 @@ export function App(): JSX.Element {
     setIsChecking(true);
     setError(null);
     try {
+      const bridge = window.awsDependencyMapper;
+      if (!bridge) {
+        throw new Error('Application bridge is unavailable. Restart the app. If this keeps happening, check the app logs.');
+      }
+
       const [cli, auth] = await Promise.all([
-        window.awsDependencyMapper.checkAwsCli(),
-        window.awsDependencyMapper.checkAwsAuth()
+        bridge.checkAwsCli(),
+        bridge.checkAwsAuth()
       ]);
       setCliStatus(cli);
       setAuthStatus(auth);
@@ -48,7 +53,10 @@ export function App(): JSX.Element {
   }
 
   async function loadRecentScans(): Promise<void> {
-    setRecentScans(await window.awsDependencyMapper.listRecentScans());
+    const bridge = window.awsDependencyMapper;
+    if (!bridge) return;
+
+    setRecentScans(await bridge.listRecentScans());
   }
 
   async function discover(): Promise<void> {
